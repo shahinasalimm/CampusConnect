@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Doubt Details – CampusConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: #f4f4f4;
+    }
+
+    .navbar {
+      background: #4a90e2;
+      color: white;
+      display: flex;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      align-items: center;
+    }
+
+    .navbar a {
+      color: white;
+      margin-left: 1rem;
+      text-decoration: none;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 2rem auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    }
+
+    h2 {
+      margin-top: 0;
+    }
+
+    .comment-form {
+      margin-top: 2rem;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      resize: vertical;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      margin-top: 10px;
+      padding: 0.6rem 1.2rem;
+      background: #4a90e2;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .comment-list {
+      margin-top: 2rem;
+    }
+
+    .comment {
+      background: #f0f0f0;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      border-radius: 6px;
+    }
+
+    footer {
+      text-align: center;
+      padding: 1rem;
+      color: #777;
+      background: #eaeaea;
+      margin-top: 3rem;
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <h1>CampusConnect</h1>
+    <div>
+      <a href="/doubts">Back</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <h2>{{ doubt.title }}</h2>
+    <p><strong>Description:</strong> {{ doubt.description }}</p>
+    <p><strong>Posted by:</strong> {{ doubt.author_email }}</p>
+    <p><strong>Date:</strong> {{ doubt.date_posted.strftime('%Y-%m-%d') }}</p>
+
+    <div class="comment-section">
+      <h3>Add a Comment</h3>
+      <form action="/doubts/{{ doubt.id }}/comment" method="POST" class="comment-form">
+        <textarea name="text" placeholder="Type your comment here..." required></textarea>
+        <button type="submit">Post Comment</button>
+      </form>
+
+      <div class="comment-list">
+        <h3>Comments:</h3>
+        {% for comment in comments %}
+          <div class="comment">
+            <p>{{ comment.text }}</p>
+            <small>By {{ comment.author_email }} on {{ comment.date_posted.strftime('%Y-%m-%d') }}</small>
+          </div>
+        {% else %}
+          <p>No comments yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 CampusConnect | Helping Students Help Each Other
+  </footer>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Report Lost/Found – CampusConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <header class="navbar">
+    <h1>📦 CampusConnect</h1>
+    <div>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/lostfound">Back to Lost & Found</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </header>
+
+  <section class="form-container">
+    <h2>Report Lost or Found Item</h2>
+    <form action="/lostfound/report" method="POST" enctype="multipart/form-data">
+      <label>Item Name</label>
+      <input type="text" name="item_name" required />
+
+      <label>Description</label>
+      <textarea name="description" rows="4" required></textarea>
+
+      <label>Status</label>
+      <select name="status" required>
+        <option value="lost">Lost</option>
+        <option value="found">Found</option>
+      </select>
+
+      <label>Location</label>
+      <input type="text" name="location" required />
+
+      <label>Contact Email</label>
+      <input type="email" name="contact_email" required />
+
+      <label>Upload Image (optional)</label>
+      <input type="file" name="image" accept="image/*" />
+
+      <button type="submit">Submit Report</button>
+    </form>
+  </section>
+
+  <footer>
+    © 2025 CampusConnect | Built by Students, for Students
+  </footer>
+
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard – CampusConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">🎓 CampusConnect</div>
+    <nav class="nav-links">
+      <a href="/home">CampusCart</a>
+      <a href="/lostfound">Lost & Found</a>
+      <a href="/events">Events</a>
+      <a href="/doubts">Doubts</a>
+      <a href="/logout">Logout</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h2>Welcome, {{ username }}
+    </h2>
+    <p>
+      Choose a module to get started:</p>
+    <div class="hero-buttons">
+      <a href="/home" class="btn-primary">🛒 CampusCart</a>
+      <a href="/lostfound" class="btn-outline">📦 Lost & Found</a>
+      <a href="/events" class="btn-outline">🎉 Events</a>
+      <a href="/doubts" class="btn-outline">❓ Doubts</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    © 2025 CampusConnect | Built by Students, for Students
+  </footer>
+
+</body>
+</html>

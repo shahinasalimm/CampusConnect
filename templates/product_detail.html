@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Product Details |🛒CampusConnect</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #f9fafb;
+      margin: 0;
+      padding: 0;
+    }
+
+    .navbar {
+      background-color: #153d8e;
+      color: white;
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .navbar a {
+      color: white;
+      text-decoration: none;
+      font-weight: 500;
+      margin-left: 1.5rem;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 2rem auto;
+      background-color: white;
+      padding: 2rem;
+      border-radius: 10px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.05);
+      display: flex;
+      gap: 2rem;
+    }
+
+    .product-image {
+      flex: 1;
+    }
+
+    .product-image img {
+      width: 100%;
+      border-radius: 8px;
+    }
+
+    .product-details {
+      flex: 2;
+    }
+
+    .product-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .product-price {
+      font-size: 1.3rem;
+      color: #1e40af;
+      font-weight: bold;
+      margin-bottom: 1rem;
+    }
+
+    .product-description {
+      line-height: 1.6;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .category {
+      font-size: 0.95rem;
+      color: #555;
+      margin-bottom: 1rem;
+    }
+
+    .contact-btn {
+      display: inline-block;
+      padding: 0.75rem 1.5rem;
+      background-color: #123375;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    .contact-btn:hover {
+      background-color: #1e56c3;
+    }
+
+    footer {
+      text-align: center;
+      margin-top: 3rem;
+      padding: 1rem;
+      color: #777;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <h1>🎓CampusConnect</h1>
+    <div>
+      <a href="/home">Home</a>
+      <a href="/logout">Logout</a>
+    </div>
+  </header>
+
+  <div class="container">
+    <div class="product-image">
+      <img src="{{ url_for('static', filename='uploads/' + product.image) }}" alt="Product Image">
+    </div>
+    <div class="product-details">
+      <h2 class="product-title">{{ product.title }}</h2>
+      <p class="product-price">₹{{ product.price }}</p>
+      <p class="category">Category: {{ product.category }}</p>
+      <p class="product-description">{{ product.description }}</p>
+      <a href="mailto:{{ product.seller_email }}" class="contact-btn">Contact Seller</a>
+    </div>
+  </div>
+
+  <footer>
+    © 2025 CampusConnect | Connecting Students, Empowering Campus Life
+  </footer>
+
+</body>
+</html>

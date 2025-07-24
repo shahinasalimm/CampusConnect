@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CampusConnect | Explore Campus Life</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Navbar -->
+  <header class="navbar">
+    <div class="logo">🎓CampusConnect</div>
+    <nav class="nav-links">
+      <a href="/login">Login</a>
+      <a href="/register" class="btn-primary">Sign Up</a>
+    </nav>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero">
+    <h1>CampusConnect</h1>
+    <div class="tagline">Your One-stop Campus Platform</div>
+    <p>Buy & sell items, find lost things, share events, and ask your seniors — all in one place.</p>
+
+    <div class="hero-buttons">
+      <a href="/home" class="btn-primary">🛒 Market place</a>
+      <a href="/lostfound" class="btn-outline">📦 Lost & Found</a>
+      <a href="/events" class="btn-outline">🎉 Events</a>
+      <a href="/doubts" class="btn-outline">❓ Doubts</a>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    &copy; 2025 CampusConnect | Connecting Students, Empowering Campus Life
+  </footer>
+
+</body>
+</html>
