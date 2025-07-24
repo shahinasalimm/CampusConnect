@@ -22,10 +22,10 @@
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: HTML, CSS, JavaScript (Jinja2 templating)
+- **Frontend**: HTML, CSS, JavaScript 
 - **Backend**: Flask (Python)
 - **Database**: PostgreSQL
-- **Others**: SQLAlchemy, WTForms
+
 
 ---
 
