@@ -57,12 +57,16 @@ git clone https://github.com/shahinasalimm/CampusConnect.git
 cd CampusConnect
 
 ### Create a virtual environment
+```bash
 python -m venv venv
 venv\Scripts\activate   # On Windows
 source venv/bin/activate   # On macOS/Linux
+
 ### Install dependencies
+```bash
 pip install -r requirements.txt
 
 ###Run the application
+```bash
 python app.py
 
