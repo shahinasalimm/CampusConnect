@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Q&A Forum - Campus Connect{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1><i class="fas fa-comments"></i> Q&A Forum</h1>
+        <button class="btn btn-primary" onclick="openModal('addQuestionModal')">
+            <i class="fas fa-plus"></i> Ask Question
+        </button>
+    </div>
+    
+    <div class="forum-questions">
+        {% for question in questions %}
+        <div class="question-card">
+            <div class="question-stats">
+                <div class="stat">
+                    <span class="stat-number">{{ question.answer_count }}</span>
+                    <span class="stat-label">Answers</span>
+                </div>
+            </div>
+            <div class="question-content">
+                <h3>
+                    <a href="{{ url_for('question_detail', question_id=question.id) }}">
+                        {{ question.title }}
+                    </a>
+                </h3>
+                <p class="question-description">{{ question.description[:150] }}{% if question.description|length > 150 %}...{% endif %}</p>
+                <div class="question-meta">
+                    <div class="question-tags">
+                        {% if question.tags %}
+                            {% for tag in question.tags.split(',') %}
+                            <span class="tag">{{ tag.strip() }}</span>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="question-author">
+                        <i class="fas fa-user"></i>
+                        {{ question.author_name }}
+                        <span class="question-date">{{ question.created_at.split(' ')[0] }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    {% if not questions %}
+    <div class="empty-state">
+        <i class="fas fa-question-circle"></i>
+        <h3>No questions yet</h3>
+        <p>Be the first to ask a question and help build the knowledge base!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Add Question Modal -->
+<div id="addQuestionModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Ask a Question</h3>
+            <span class="close" onclick="closeModal('addQuestionModal')">&times;</span>
+        </div>
+        <form method="POST" action="{{ url_for('add_question') }}" class="modal-form">
+            <div class="form-group">
+                <label for="title">Question Title</label>
+                <input type="text" id="title" name="title" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="description">Detailed Description</label>
+                <textarea id="description" name="description" required rows="5"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="tags">Tags (comma separated)</label>
+                <input type="text" id="tags" name="tags" placeholder="e.g., math, physics, programming">
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModal('addQuestionModal')">
+                    Cancel
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Post Question
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

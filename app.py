@@ -1,290 +1,359 @@
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.utils import secure_filename
-from werkzeug.security import generate_password_hash, check_password_hash
-import os
+from flask import Flask, render_template, request, redirect, url_for, session, flash, jsonify
+import sqlite3
+import hashlib
+import secrets
 from datetime import datetime
-from config import Config
+import os
 
 app = Flask(__name__)
-app.config.from_object(Config)
-db = SQLAlchemy(app)
+app.secret_key = secrets.token_hex(16)
 
-# -------------------
-# Models
-# -------------------
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    regno = db.Column(db.String(20), unique=True, nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(512), nullable=False)
+# Database initialization
+def init_db():
+    conn = sqlite3.connect('campus_connect.db')
+    cursor = conn.cursor()
+    
+    # Users table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            reg_no TEXT UNIQUE NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # Marketplace items table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS marketplace_items (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            price DECIMAL(10,2) NOT NULL,
+            category TEXT NOT NULL,
+            contact_info TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Events table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS events (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            event_date DATE NOT NULL,
+            location TEXT NOT NULL,
+            registration_link TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Forum questions table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS forum_questions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            title TEXT NOT NULL,
+            description TEXT NOT NULL,
+            tags TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    # Forum answers table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS forum_answers (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            question_id INTEGER NOT NULL,
+            user_id INTEGER NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (question_id) REFERENCES forum_questions (id),
+            FOREIGN KEY (user_id) REFERENCES users (id)
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
 
-class Product(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(150), nullable=False)
-    category = db.Column(db.String(50), nullable=False)
-    price = db.Column(db.Float, nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    image = db.Column(db.String(100), nullable=False)
-    seller_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    seller_email = db.Column(db.String(150), nullable=False)
+# Helper functions
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
-class LostItem(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    item_name = db.Column(db.String(100), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    status = db.Column(db.String(20), nullable=False)
-    location = db.Column(db.String(100), nullable=False)
-    date_reported = db.Column(db.Date, default=datetime.utcnow)
-    contact_email = db.Column(db.String(150), nullable=False)
-    image = db.Column(db.String(100), nullable=True)
+def get_db_connection():
+    conn = sqlite3.connect('campus_connect.db')
+    conn.row_factory = sqlite3.Row
+    return conn
 
-class Event(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(150), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    date = db.Column(db.DateTime, nullable=False)
-    location = db.Column(db.String(150), nullable=False)
-    organizer_email = db.Column(db.String(150), nullable=False)
-
-class Doubt(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(200), nullable=False)
-    description = db.Column(db.Text, nullable=False)
-    author_email = db.Column(db.String(150), nullable=False)
-    date_posted = db.Column(db.DateTime, default=datetime.utcnow)
-
-# -------------------
 # Routes
-# -------------------
 @app.route('/')
 def index():
     if 'user_id' in session:
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
-@app.route('/dashboard')
-def dashboard():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    email = session.get('user_email', '')
-    username = email.split('@')[0] if email else 'User'
-    return render_template('dashboard.html', username=username)
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
+@app.route('/signup', methods=['GET', 'POST'])
+def signup():
     if request.method == 'POST':
-        regno = request.form['regno'].strip()
-        email = request.form['email'].strip()
-        password = generate_password_hash(request.form['password'])
-
-        if not regno.upper().startswith('LBT'):
-            flash('Registration number must start with "LBT".')
-            return redirect(url_for('register'))
-
-        existing = User.query.filter((User.regno == regno) | (User.email == email)).first()
-        if existing:
-            flash('User with same regno or email already exists.')
-            return redirect(url_for('register'))
-
-        new_user = User(regno=regno, email=email, password=password)
-        db.session.add(new_user)
-        db.session.commit()
-        flash('Registration successful! Please login.')
-        return redirect(url_for('login'))
-
-    return render_template('register.html')
+        name = request.form['name']
+        email = request.form['email']
+        password = request.form['password']
+        reg_no = request.form['reg_no']
+        
+        password_hash = hash_password(password)
+        
+        conn = get_db_connection()
+        try:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT INTO users (name, email, password_hash, reg_no)
+                VALUES (?, ?, ?, ?)
+            ''', (name, email, password_hash, reg_no))
+            conn.commit()
+            flash('Account created successfully! Please log in.', 'success')
+            return redirect(url_for('login'))
+        except sqlite3.IntegrityError:
+            flash('Email or registration number already exists!', 'error')
+        finally:
+            conn.close()
+    
+    return render_template('auth/signup.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        regno = request.form['regno'].strip()
+        email = request.form['email']
         password = request.form['password']
-        user = User.query.filter_by(regno=regno).first()
-
-        if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id
-            session['user_email'] = user.email
-            flash('Login successful.')
+        password_hash = hash_password(password)
+        
+        conn = get_db_connection()
+        user = conn.execute('''
+            SELECT * FROM users WHERE email = ? AND password_hash = ?
+        ''', (email, password_hash)).fetchone()
+        conn.close()
+        
+        if user:
+            session['user_id'] = user['id']
+            session['user_name'] = user['name']
             return redirect(url_for('dashboard'))
-
-        flash('Invalid regno or password.')
-        return redirect(url_for('login'))
-
-    return render_template('login.html')
+        else:
+            flash('Invalid credentials!', 'error')
+    
+    return render_template('auth/login.html')
 
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('You have been logged out.')
     return redirect(url_for('index'))
 
-# -------------------
-# CampusCart (Marketplace)
-# -------------------
-@app.route('/home')
-def home():
-    products = Product.query.order_by(Product.id.desc()).all()
-    return render_template('home.html', products=products)
-
-@app.route('/post', methods=['GET', 'POST'])
-def post_product():
+@app.route('/dashboard')
+def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if request.method == 'POST':
-        title = request.form['title']
-        category = request.form['category']
-        price = float(request.form['price'])
-        description = request.form['description']
-        image_file = request.files['image']
+    return render_template('dashboard.html')
 
-        filename = secure_filename(image_file.filename)
-        image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-        image_file.save(image_path)
-
-        new_product = Product(
-            title=title,
-            category=category,
-            price=price,
-            description=description,
-            image=filename,
-            seller_id=session['user_id'],
-            seller_email=session['user_email']
-        )
-        db.session.add(new_product)
-        db.session.commit()
-        flash('Product posted successfully!')
-        return redirect(url_for('home'))
-
-    return render_template('post_product.html')
-
-@app.route('/product/<int:product_id>')
-def product_detail(product_id):
-    product = Product.query.get_or_404(product_id)
-    return render_template('product_detail.html', product=product)
-
-# -------------------
-# Lost & Found
-# -------------------
-@app.route('/lostfound')
-def lostfound():
-    items = LostItem.query.order_by(LostItem.date_reported.desc()).all()
-    return render_template('lostfound.html', items=items)
-
-@app.route('/lostfound/report', methods=['GET', 'POST'])
-def report_lostfound():
+@app.route('/marketplace')
+def marketplace():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if request.method == 'POST':
-        item_name = request.form['item_name']
-        description = request.form['description']
-        status = request.form['status']
-        location = request.form['location']
-        contact_email = request.form['contact_email']
-        image_file = request.files['image']
+    
+    category = request.args.get('category', '')
+    
+    conn = get_db_connection()
+    if category:
+        items = conn.execute('''
+            SELECT m.*, u.name as seller_name FROM marketplace_items m
+            JOIN users u ON m.user_id = u.id
+            WHERE m.category = ?
+            ORDER BY m.created_at DESC
+        ''', (category,)).fetchall()
+    else:
+        items = conn.execute('''
+            SELECT m.*, u.name as seller_name FROM marketplace_items m
+            JOIN users u ON m.user_id = u.id
+            ORDER BY m.created_at DESC
+        ''').fetchall()
+    
+    categories = conn.execute('''
+        SELECT DISTINCT category FROM marketplace_items
+        ORDER BY category
+    ''').fetchall()
+    
+    conn.close()
+    
+    return render_template('marketplace/marketplace.html', items=items, categories=categories, selected_category=category)
 
-        filename = secure_filename(image_file.filename) if image_file else ''
-        if filename:
-            image_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            image_file.save(image_path)
+@app.route('/marketplace/add', methods=['POST'])
+def add_marketplace_item():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    title = request.form['title']
+    description = request.form['description']
+    price = request.form['price']
+    category = request.form['category']
+    contact_info = request.form['contact_info']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO marketplace_items (user_id, title, description, price, category, contact_info)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (session['user_id'], title, description, price, category, contact_info))
+    conn.commit()
+    conn.close()
+    
+    flash('Item posted successfully!', 'success')
+    return redirect(url_for('marketplace'))
 
-        item = LostItem(
-            item_name=item_name,
-            description=description,
-            status=status,
-            location=location,
-            contact_email=contact_email,
-            image=filename
-        )
-        db.session.add(item)
-        db.session.commit()
-        flash('Lost/Found report submitted.')
-        return redirect(url_for('lostfound'))
+@app.route('/api/reveal-contact/<int:item_id>')
+def reveal_contact(item_id):
+    if 'user_id' not in session:
+        return jsonify({'error': 'Unauthorized'}), 401
+    
+    conn = get_db_connection()
+    item = conn.execute('''
+        SELECT contact_info FROM marketplace_items WHERE id = ?
+    ''', (item_id,)).fetchone()
+    conn.close()
+    
+    if item:
+        return jsonify({'contact_info': item['contact_info']})
+    else:
+        return jsonify({'error': 'Item not found'}), 404
 
-    return render_template('report_lostfound.html')
-
-@app.route('/lostfound/<int:item_id>')
-def lostfound_detail(item_id):
-    item = LostItem.query.get_or_404(item_id)
-    return render_template('lostfound_detail.html', item=item)
-
-# -------------------
-# Events
-# -------------------
 @app.route('/events')
 def events():
-    all_events = Event.query.order_by(Event.date.asc()).all()
-    return render_template('events.html', events=all_events)
-
-@app.route('/events/post', methods=['GET', 'POST'])
-def post_event():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        date = datetime.strptime(request.form['date'], '%Y-%m-%dT%H:%M')
-        location = request.form['location']
-        organizer_email = request.form['organizer_email']
+    
+    conn = get_db_connection()
+    events = conn.execute('''
+        SELECT e.*, u.name as organizer_name FROM events e
+        JOIN users u ON e.user_id = u.id
+        ORDER BY e.event_date ASC
+    ''').fetchall()
+    conn.close()
+    
+    return render_template('events/events.html', events=events)
 
-        event = Event(
-            title=title,
-            description=description,
-            date=date,
-            location=location,
-            organizer_email=organizer_email
-        )
-        db.session.add(event)
-        db.session.commit()
-        flash('Event posted successfully.')
-        return redirect(url_for('events'))
-
-    return render_template('post_event.html')
-
-@app.route('/events/<int:event_id>')
-def event_detail(event_id):
-    event = Event.query.get_or_404(event_id)
-    return render_template('event_detail.html', event=event)
-
-# -------------------
-# Doubts & Queries
-# -------------------
-@app.route('/doubts')
-def doubts():
-    all_doubts = Doubt.query.order_by(Doubt.date_posted.desc()).all()
-    return render_template('doubts.html', doubts=all_doubts)
-
-@app.route('/doubts/ask', methods=['GET', 'POST'])
-def ask_doubt():
+@app.route('/events/add', methods=['POST'])
+def add_event():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    if request.method == 'POST':
-        title = request.form['title']
-        description = request.form['description']
-        author_email = session['user_email']
+    
+    title = request.form['title']
+    description = request.form['description']
+    event_date = request.form['event_date']
+    location = request.form['location']
+    registration_link = request.form['registration_link']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO events (user_id, title, description, event_date, location, registration_link)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ''', (session['user_id'], title, description, event_date, location, registration_link))
+    conn.commit()
+    conn.close()
+    
+    flash('Event posted successfully!', 'success')
+    return redirect(url_for('events'))
 
-        doubt = Doubt(title=title, description=description, author_email=author_email)
-        db.session.add(doubt)
-        db.session.commit()
-        flash('Your doubt has been posted.')
-        return redirect(url_for('doubts'))
+@app.route('/forum')
+def forum():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    questions = conn.execute('''
+        SELECT q.*, u.name as author_name,
+               COUNT(a.id) as answer_count
+        FROM forum_questions q
+        JOIN users u ON q.user_id = u.id
+        LEFT JOIN forum_answers a ON q.id = a.question_id
+        GROUP BY q.id
+        ORDER BY q.created_at DESC
+    ''').fetchall()
+    conn.close()
+    
+    return render_template('forum/forum.html', questions=questions)
 
-    return render_template('ask_doubt.html')
+@app.route('/forum/question/<int:question_id>')
+def question_detail(question_id):
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    conn = get_db_connection()
+    question = conn.execute('''
+        SELECT q.*, u.name as author_name FROM forum_questions q
+        JOIN users u ON q.user_id = u.id
+        WHERE q.id = ?
+    ''', (question_id,)).fetchone()
+    
+    answers = conn.execute('''
+        SELECT a.*, u.name as author_name FROM forum_answers a
+        JOIN users u ON a.user_id = u.id
+        WHERE a.question_id = ?
+        ORDER BY a.created_at ASC
+    ''', (question_id,)).fetchall()
+    conn.close()
+    
+    if not question:
+        flash('Question not found!', 'error')
+        return redirect(url_for('forum'))
+    
+    return render_template('forum/question_detail.html', question=question, answers=answers)
 
-@app.route('/doubts/<int:doubt_id>')
-def doubt_detail(doubt_id):
-    doubt = Doubt.query.get_or_404(doubt_id)
-    return render_template('doubt_detail.html', doubt=doubt)
+@app.route('/forum/add_question', methods=['POST'])
+def add_question():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    title = request.form['title']
+    description = request.form['description']
+    tags = request.form['tags']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO forum_questions (user_id, title, description, tags)
+        VALUES (?, ?, ?, ?)
+    ''', (session['user_id'], title, description, tags))
+    conn.commit()
+    conn.close()
+    
+    flash('Question posted successfully!', 'success')
+    return redirect(url_for('forum'))
 
+@app.route('/forum/add_answer', methods=['POST'])
+def add_answer():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    question_id = request.form['question_id']
+    content = request.form['content']
+    
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute('''
+        INSERT INTO forum_answers (question_id, user_id, content)
+        VALUES (?, ?, ?)
+    ''', (question_id, session['user_id'], content))
+    conn.commit()
+    conn.close()
+    
+    flash('Answer added successfully!', 'success')
+    return redirect(url_for('question_detail', question_id=question_id))
 
-
-
-
-# -------------------
-# Run App
-# -------------------
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    init_db()
     app.run(debug=True)
-

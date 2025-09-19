@@ -1,41 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>CampusConnect | Explore Campus Life</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
+{% extends "base.html" %}
 
-  <!-- Navbar -->
-  <header class="navbar">
-    <div class="logo">🎓CampusConnect</div>
-    <nav class="nav-links">
-      <a href="/login">Login</a>
-      <a href="/register" class="btn-primary">Sign Up</a>
-    </nav>
-  </header>
+{% block title %}Welcome - Campus Connect{% endblock %}
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <h1>CampusConnect</h1>
-    <div class="tagline">Your One-stop Campus Platform</div>
-    <p>Buy & sell items, find lost things, share events, and ask your seniors — all in one place.</p>
-
-    <div class="hero-buttons">
-      <a href="/home" class="btn-primary">🛒 Market place</a>
-      <a href="/lostfound" class="btn-outline">📦 Lost & Found</a>
-      <a href="/events" class="btn-outline">🎉 Events</a>
-      <a href="/doubts" class="btn-outline">❓ Doubts</a>
+{% block content %}
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-text">
+            <h1 class="hero-title">
+                Welcome to <span class="brand-highlight">Campus Connect</span>
+            </h1>
+            <p class="hero-description">
+                Your all-in-one platform for campus life. Buy and sell items, discover events, 
+                and get help from your peers - all in one place.
+            </p>
+            <div class="hero-buttons">
+                <a href="{{ url_for('login') }}" class="btn btn-primary">
+                    <i class="fas fa-sign-in-alt"></i> Login
+                </a>
+                <a href="{{ url_for('signup') }}" class="btn btn-secondary">
+                    <i class="fas fa-user-plus"></i> Sign Up
+                </a>
+            </div>
+        </div>
+        <div class="hero-features">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-store"></i>
+                </div>
+                <h3>Marketplace</h3>
+                <p>Buy and sell items with fellow students safely and easily</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-calendar"></i>
+                </div>
+                <h3>Events</h3>
+                <p>Discover campus events and register for activities you love</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <i class="fas fa-comments"></i>
+                </div>
+                <h3>Q&A Forum</h3>
+                <p>Get academic help and connect with peers in your field</p>
+            </div>
+        </div>
     </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    &copy; 2025 CampusConnect | Connecting Students, Empowering Campus Life
-  </footer>
-
-</body>
-</html>
+</div>
+{% endblock %}

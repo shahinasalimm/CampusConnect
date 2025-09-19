@@ -1,44 +1,59 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Dashboard – CampusConnect</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-</head>
-<body>
+{% extends "base.html" %}
 
-  <!-- Navbar -->
-  <header class="navbar">
-    <div class="logo">🎓 CampusConnect</div>
-    <nav class="nav-links">
-      <a href="/home">CampusCart</a>
-      <a href="/lostfound">Lost & Found</a>
-      <a href="/events">Events</a>
-      <a href="/doubts">Doubts</a>
-      <a href="/logout">Logout</a>
-    </nav>
-  </header>
+{% block title %}Dashboard - Campus Connect{% endblock %}
 
-  <!-- Hero Section -->
-  <section class="hero">
-    <h2>Welcome, {{ username }}
-    </h2>
-    <p>
-      Choose a module to get started:</p>
-    <div class="hero-buttons">
-      <a href="/home" class="btn-primary">🛒 CampusCart</a>
-      <a href="/lostfound" class="btn-outline">📦 Lost & Found</a>
-      <a href="/events" class="btn-outline">🎉 Events</a>
-      <a href="/doubts" class="btn-outline">❓ Doubts</a>
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>Welcome back, {{ session.user_name }}!</h1>
+        <p>What would you like to do today?</p>
     </div>
-  </section>
-
-  <!-- Footer -->
-  <footer>
-    © 2025 CampusConnect | Built by Students, for Students
-  </footer>
-
-</body>
-</html>
+    
+    <div class="dashboard-grid">
+        <a href="{{ url_for('marketplace') }}" class="dashboard-card">
+            <div class="card-icon">
+                <i class="fas fa-store"></i>
+            </div>
+            <h3>Marketplace</h3>
+            <p>Buy and sell items with other students</p>
+            <div class="card-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('events') }}" class="dashboard-card">
+            <div class="card-icon">
+                <i class="fas fa-calendar"></i>
+            </div>
+            <h3>Events</h3>
+            <p>Discover and post campus events</p>
+            <div class="card-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+        
+        <a href="{{ url_for('forum') }}" class="dashboard-card">
+            <div class="card-icon">
+                <i class="fas fa-comments"></i>
+            </div>
+            <h3>Q&A Forum</h3>
+            <p>Ask questions and help your peers</p>
+            <div class="card-arrow">
+                <i class="fas fa-arrow-right"></i>
+            </div>
+        </a>
+    </div>
+    
+    <div class="dashboard-stats">
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-content">
+                <h4>Connected Students</h4>
+                <p>Join thousands of students already using Campus Connect</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

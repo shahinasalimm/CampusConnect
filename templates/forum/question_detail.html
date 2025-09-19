@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}{{ question.title }} - Q&A Forum{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="breadcrumb">
+        <a href="{{ url_for('forum') }}"><i class="fas fa-arrow-left"></i> Back to Forum</a>
+    </div>
+    
+    <div class="question-detail">
+        <div class="question-header">
+            <h1>{{ question.title }}</h1>
+            <div class="question-meta">
+                <span class="question-author">
+                    <i class="fas fa-user"></i> {{ question.author_name }}
+                </span>
+                <span class="question-date">
+                    <i class="fas fa-clock"></i> {{ question.created_at.split(' ')[0] }}
+                </span>
+            </div>
+        </div>
+        
+        <div class="question-content">
+            <p>{{ question.description }}</p>
+            {% if question.tags %}
+            <div class="question-tags">
+                {% for tag in question.tags.split(',') %}
+                <span class="tag">{{ tag.strip() }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="answers-section">
+        <h3>
+            <i class="fas fa-comments"></i> 
+            {{ answers|length }} Answer{{ 's' if answers|length != 1 else '' }}
+        </h3>
+        
+        <div class="add-answer">
+            <form method="POST" action="{{ url_for('add_answer') }}" class="answer-form">
+                <input type="hidden" name="question_id" value="{{ question.id }}">
+                <div class="form-group">
+                    <label for="content">Your Answer</label>
+                    <textarea id="content" name="content" required rows="4" 
+                              placeholder="Share your knowledge and help your fellow student..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-reply"></i> Post Answer
+                </button>
+            </form>
+        </div>
+        
+        <div class="answers-list">
+            {% for answer in answers %}
+            <div class="answer-card">
+                <div class="answer-header">
+                    <span class="answer-author">
+                        <i class="fas fa-user"></i> {{ answer.author_name }}
+                    </span>
+                    <span class="answer-date">
+                        <i class="fas fa-clock"></i> {{ answer.created_at.split(' ')[0] }}
+                    </span>
+                </div>
+                <div class="answer-content">
+                    <p>{{ answer.content }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        {% if not answers %}
+        <div class="empty-state">
+            <i class="fas fa-comment-slash"></i>
+            <h3>No answers yet</h3>
+            <p>Be the first to help answer this question!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
