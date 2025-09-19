@@ -44,7 +44,7 @@ This project aims to simplify student life by providing a single platform for co
 ![Q&A](screenshots/q&a.png)
 
 ### Q&A - Answers
-![Q&A Answers](screenshots/q&a_answers.png)
+![Q&A Answers](screenshots/q&a_discussions.png)
 
 
 ---
@@ -55,3 +55,14 @@ This project aims to simplify student life by providing a single platform for co
 ```bash
 git clone https://github.com/shahinasalimm/CampusConnect.git
 cd CampusConnect
+### Create a virtual environment
+```bash
+python -m venv venv
+venv\Scripts\activate   # On Windows
+source venv/bin/activate   # On macOS/Linux
+Install dependencies
+pip install -r requirements.txt
+Run the application
+python app.py
+
+
