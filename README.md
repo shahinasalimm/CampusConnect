@@ -43,8 +43,6 @@ This project aims to simplify student life by providing a single platform for co
 ### Q&A
 ![Q&A](screenshots/q&a.png)
 
-### Q&A - Answers
-![Q&A Answers](screenshots/q&a_discussions.png)
 
 
 ---
