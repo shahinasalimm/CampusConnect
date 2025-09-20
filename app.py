@@ -3,7 +3,6 @@ import sqlite3
 import hashlib
 import secrets
 from datetime import datetime
-import os
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(16)
@@ -55,7 +54,7 @@ def init_db():
         )
     ''')
     
-    # Forum questions table
+    # Forum tables
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS forum_questions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -68,7 +67,6 @@ def init_db():
         )
     ''')
     
-    # Forum answers table
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS forum_answers (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -100,6 +98,20 @@ def index():
         return redirect(url_for('dashboard'))
     return render_template('index.html')
 
+@app.route('/go/<string:page>')
+def go_page(page):
+    if 'user_id' not in session:
+        flash('Please log in to access this page', 'info')
+        return redirect(url_for('login'))
+    if page == 'marketplace':
+        return redirect(url_for('marketplace'))
+    elif page == 'events':
+        return redirect(url_for('events'))
+    elif page == 'forum':
+        return redirect(url_for('forum'))
+    else:
+        return redirect(url_for('dashboard'))
+
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -107,7 +119,6 @@ def signup():
         email = request.form['email']
         password = request.form['password']
         reg_no = request.form['reg_no']
-        
         password_hash = hash_password(password)
         
         conn = get_db_connection()
@@ -135,9 +146,7 @@ def login():
         password_hash = hash_password(password)
         
         conn = get_db_connection()
-        user = conn.execute('''
-            SELECT * FROM users WHERE email = ? AND password_hash = ?
-        ''', (email, password_hash)).fetchone()
+        user = conn.execute('SELECT * FROM users WHERE email = ? AND password_hash = ?', (email, password_hash)).fetchone()
         conn.close()
         
         if user:
@@ -160,14 +169,15 @@ def dashboard():
         return redirect(url_for('login'))
     return render_template('dashboard.html')
 
+# Marketplace routes
 @app.route('/marketplace')
 def marketplace():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
     category = request.args.get('category', '')
-    
     conn = get_db_connection()
+    
     if category:
         items = conn.execute('''
             SELECT m.*, u.name as seller_name FROM marketplace_items m
@@ -182,11 +192,7 @@ def marketplace():
             ORDER BY m.created_at DESC
         ''').fetchall()
     
-    categories = conn.execute('''
-        SELECT DISTINCT category FROM marketplace_items
-        ORDER BY category
-    ''').fetchall()
-    
+    categories = conn.execute('SELECT DISTINCT category FROM marketplace_items ORDER BY category').fetchall()
     conn.close()
     
     return render_template('marketplace/marketplace.html', items=items, categories=categories, selected_category=category)
@@ -203,8 +209,7 @@ def add_marketplace_item():
     contact_info = request.form['contact_info']
     
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
+    conn.execute('''
         INSERT INTO marketplace_items (user_id, title, description, price, category, contact_info)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (session['user_id'], title, description, price, category, contact_info))
@@ -220,9 +225,7 @@ def reveal_contact(item_id):
         return jsonify({'error': 'Unauthorized'}), 401
     
     conn = get_db_connection()
-    item = conn.execute('''
-        SELECT contact_info FROM marketplace_items WHERE id = ?
-    ''', (item_id,)).fetchone()
+    item = conn.execute('SELECT contact_info FROM marketplace_items WHERE id = ?', (item_id,)).fetchone()
     conn.close()
     
     if item:
@@ -230,6 +233,7 @@ def reveal_contact(item_id):
     else:
         return jsonify({'error': 'Item not found'}), 404
 
+# Events routes
 @app.route('/events')
 def events():
     if 'user_id' not in session:
@@ -257,8 +261,7 @@ def add_event():
     registration_link = request.form['registration_link']
     
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
+    conn.execute('''
         INSERT INTO events (user_id, title, description, event_date, location, registration_link)
         VALUES (?, ?, ?, ?, ?, ?)
     ''', (session['user_id'], title, description, event_date, location, registration_link))
@@ -268,6 +271,7 @@ def add_event():
     flash('Event posted successfully!', 'success')
     return redirect(url_for('events'))
 
+# Forum routes
 @app.route('/forum')
 def forum():
     if 'user_id' not in session:
@@ -293,18 +297,8 @@ def question_detail(question_id):
         return redirect(url_for('login'))
     
     conn = get_db_connection()
-    question = conn.execute('''
-        SELECT q.*, u.name as author_name FROM forum_questions q
-        JOIN users u ON q.user_id = u.id
-        WHERE q.id = ?
-    ''', (question_id,)).fetchone()
-    
-    answers = conn.execute('''
-        SELECT a.*, u.name as author_name FROM forum_answers a
-        JOIN users u ON a.user_id = u.id
-        WHERE a.question_id = ?
-        ORDER BY a.created_at ASC
-    ''', (question_id,)).fetchall()
+    question = conn.execute('SELECT q.*, u.name as author_name FROM forum_questions q JOIN users u ON q.user_id = u.id WHERE q.id = ?', (question_id,)).fetchone()
+    answers = conn.execute('SELECT a.*, u.name as author_name FROM forum_answers a JOIN users u ON a.user_id = u.id WHERE a.question_id = ? ORDER BY a.created_at ASC', (question_id,)).fetchall()
     conn.close()
     
     if not question:
@@ -323,11 +317,8 @@ def add_question():
     tags = request.form['tags']
     
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO forum_questions (user_id, title, description, tags)
-        VALUES (?, ?, ?, ?)
-    ''', (session['user_id'], title, description, tags))
+    conn.execute('INSERT INTO forum_questions (user_id, title, description, tags) VALUES (?, ?, ?, ?)',
+                 (session['user_id'], title, description, tags))
     conn.commit()
     conn.close()
     
@@ -343,11 +334,8 @@ def add_answer():
     content = request.form['content']
     
     conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT INTO forum_answers (question_id, user_id, content)
-        VALUES (?, ?, ?)
-    ''', (question_id, session['user_id'], content))
+    conn.execute('INSERT INTO forum_answers (question_id, user_id, content) VALUES (?, ?, ?)',
+                 (question_id, session['user_id'], content))
     conn.commit()
     conn.close()
     
@@ -355,5 +343,6 @@ def add_answer():
     return redirect(url_for('question_detail', question_id=question_id))
 
 if __name__ == '__main__':
-    init_db()
-    app.run(debug=True)
+    init_db()  # Optional: creates tables if not exist
+    app.run(host='0.0.0.0', port=int(os.environ.get("PORT", 5000)), debug=False)
+
